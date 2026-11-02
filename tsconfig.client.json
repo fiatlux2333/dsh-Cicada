@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+    "types": ["react", "react-dom"],
+    "lib": ["ES2023", "DOM", "DOM.Iterable"]
+  },
+  "include": ["packages/dsh-cicada/src/client/**/*", "packages/dsh-cicada/src/shared/**/*", "dev/**/*"],
+  "references": [{ "path": "./packages/dsh-cicada/tsconfig.client.json" }]
+}

@@ -1,0 +1,18 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node"],
+    "lib": ["ES2023", "DOM"],
+    "paths": { "@deepseek-ai/dsh-typert-protocol": ["./packages/build-contracts/protocol/index.d.ts"] }
+  },
+  "include": [
+    "packages/dsh-cicada/src/host/**/*.ts",
+    "packages/dsh-cicada/src/shared/**/*.ts",
+    "tests/**/*.ts"
+  ],
+  "exclude": ["tests/ui.spec.ts"],
+  "references": [
+    { "path": "./packages/dsh-cicada/tsconfig.host.json" },
+    { "path": "./packages/build-contracts/protocol/tsconfig.json" }
+  ]
+}
