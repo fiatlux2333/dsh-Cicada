@@ -6,7 +6,7 @@ export default defineConfig({
   webServer: {
     command: 'pnpm exec vite --host 127.0.0.1 --port 4178 --strictPort',
     url: 'http://127.0.0.1:4178',
-    reuseExistingServer: true,
+    reuseExistingServer: false,
   },
   reporter: 'list',
 });

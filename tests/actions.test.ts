@@ -31,6 +31,11 @@ function schema(db: DatabaseSync): void {
     'CREATE TABLE urls(id INTEGER PRIMARY KEY,url TEXT,title TEXT,visit_count INTEGER,typed_count INTEGER,last_visit_time INTEGER,hidden INTEGER); CREATE TABLE visits(id INTEGER PRIMARY KEY,url INTEGER,visit_time INTEGER,transition INTEGER,visit_duration INTEGER,external_referrer_url TEXT);',
   );
 }
+function clusterSchema(db: DatabaseSync): void {
+  db.exec(
+    'CREATE TABLE clusters(cluster_id INTEGER PRIMARY KEY,label TEXT NOT NULL,raw_label TEXT NOT NULL); CREATE TABLE clusters_and_visits(cluster_id INTEGER,visit_id INTEGER,url_for_deduping TEXT); CREATE TABLE cluster_keywords(cluster_id INTEGER,keyword TEXT,type INTEGER,score REAL,collections TEXT,PRIMARY KEY(cluster_id,keyword));',
+  );
+}
 describe('synthetic history', () => {
   it.each(['worker', 'student', 'designer', 'trader', 'gamer', 'lifestyle'] as const)(
     'generates stable valid past records for %s',
@@ -95,6 +100,97 @@ describe('browser database contracts using only synthetic SQLite', () => {
     expect(clearHistory(db, [])).toBeGreaterThan(0);
     expect(db.prepare('SELECT * FROM urls').all()).toEqual([]);
     db.close();
+  });
+  it('removes affected orphan clusters and scrubs sensitive metadata without deleting mixed visits', () => {
+    const db = new DatabaseSync(':memory:');
+    schema(db);
+    clusterSchema(db);
+    db.exec(
+      "INSERT INTO urls VALUES(1,'https://secret.invalid','secret',1,1,0,0),(2,'https://safe.invalid','safe',1,1,0,0); INSERT INTO visits VALUES(10,1,0,0,0,''),(20,2,0,0,0,''); INSERT INTO clusters VALUES(1,'SeCrEt journey','safe label'),(2,'orphan','orphan'),(3,'safe','safe'),(4,'safe label','SECRET raw label'); INSERT INTO clusters_and_visits VALUES(1,10,''),(1,20,''),(2,10,''),(3,20,''),(4,20,''); INSERT INTO cluster_keywords VALUES(1,'SECRET topic',0,1,''),(1,'safe topic',0,1,''),(2,'safe orphan topic',0,1,''),(3,'safe topic',0,1,''),(4,'secret keyword',0,1,'');",
+    );
+    expect(clearHistory(db, [' SECRET '])).toBe(1);
+    expect(db.prepare('SELECT id FROM visits').all()).toEqual([{ id: 20 }]);
+    expect(db.prepare('SELECT cluster_id,visit_id FROM clusters_and_visits').all()).toEqual([
+      { cluster_id: 1, visit_id: 20 },
+      { cluster_id: 3, visit_id: 20 },
+      { cluster_id: 4, visit_id: 20 },
+    ]);
+    expect(db.prepare('SELECT * FROM clusters ORDER BY cluster_id').all()).toEqual([
+      { cluster_id: 1, label: '', raw_label: 'safe label' },
+      { cluster_id: 3, label: 'safe', raw_label: 'safe' },
+      { cluster_id: 4, label: 'safe label', raw_label: '' },
+    ]);
+    expect(db.prepare('SELECT cluster_id,keyword FROM cluster_keywords ORDER BY cluster_id').all()).toEqual([
+      { cluster_id: 1, keyword: 'safe topic' },
+      { cluster_id: 3, keyword: 'safe topic' },
+    ]);
+    db.close();
+  });
+  it('captures clusters linked only through sensitive association text before unlinking them', () => {
+    const db = new DatabaseSync(':memory:');
+    schema(db);
+    clusterSchema(db);
+    db.exec(
+      "INSERT INTO urls VALUES(1,'https://safe.invalid','safe',1,1,0,0); INSERT INTO visits VALUES(10,1,0,0,0,''); INSERT INTO clusters VALUES(1,'neutral','neutral'); INSERT INTO clusters_and_visits VALUES(1,10,'https://secret.invalid'); INSERT INTO cluster_keywords VALUES(1,'neutral',0,1,'');",
+    );
+    expect(clearHistory(db, ['secret'])).toBe(0);
+    expect(db.prepare('SELECT * FROM clusters').all()).toEqual([]);
+    expect(db.prepare('SELECT * FROM cluster_keywords').all()).toEqual([]);
+    expect(db.prepare('SELECT id FROM urls').all()).toEqual([{ id: 1 }]);
+    expect(db.prepare('SELECT id FROM visits').all()).toEqual([{ id: 10 }]);
+    db.close();
+  });
+  it.each(['clusters', 'clusters_and_visits', 'cluster_keywords'])(
+    'targeted cluster cleanup tolerates a missing %s table',
+    (table) => {
+      const db = new DatabaseSync(':memory:');
+      schema(db);
+      clusterSchema(db);
+      db.exec(
+        "INSERT INTO urls VALUES(1,'https://secret.invalid','secret',1,1,0,0); INSERT INTO visits VALUES(10,1,0,0,0,''); INSERT INTO clusters VALUES(1,'secret','secret'); INSERT INTO clusters_and_visits VALUES(1,10,''); INSERT INTO cluster_keywords VALUES(1,'secret',0,1,'');",
+      );
+      db.exec(`DROP TABLE "${table}"`);
+      expect(clearHistory(db, ['secret'])).toBe(1);
+      if (table !== 'clusters')
+        expect(db.prepare("SELECT * FROM clusters WHERE label LIKE '%secret%'").all()).toEqual([]);
+      if (table !== 'cluster_keywords')
+        expect(db.prepare("SELECT * FROM cluster_keywords WHERE keyword LIKE '%secret%'").all()).toEqual([]);
+      db.close();
+    },
+  );
+  it('supports cluster schemas without optional text columns', () => {
+    const db = new DatabaseSync(':memory:');
+    schema(db);
+    db.exec(
+      "CREATE TABLE clusters(cluster_id INTEGER PRIMARY KEY); CREATE TABLE clusters_and_visits(cluster_id INTEGER,visit_id INTEGER); CREATE TABLE cluster_keywords(cluster_id INTEGER); INSERT INTO urls VALUES(1,'https://secret.invalid','secret',1,1,0,0); INSERT INTO visits VALUES(10,1,0,0,0,''); INSERT INTO clusters VALUES(1); INSERT INTO clusters_and_visits VALUES(1,10); INSERT INTO cluster_keywords VALUES(1);",
+    );
+    expect(clearHistory(db, ['secret'])).toBe(1);
+    expect(db.prepare('SELECT * FROM clusters').all()).toEqual([]);
+    expect(db.prepare('SELECT * FROM cluster_keywords').all()).toEqual([]);
+    db.close();
+  });
+  it('rolls back cluster deletion and metadata edits when a later insert fails', async () => {
+    const root = await directory(),
+      path = join(root, 'History');
+    const db = new DatabaseSync(path);
+    schema(db);
+    clusterSchema(db);
+    db.exec(
+      "INSERT INTO urls VALUES(1,'https://secret.invalid','secret',1,1,0,0),(2,'https://safe.invalid','safe',1,1,0,0); INSERT INTO visits VALUES(10,1,0,0,0,''),(20,2,0,0,0,''); INSERT INTO clusters VALUES(1,'secret mixed','secret mixed'),(2,'orphan','orphan'); INSERT INTO clusters_and_visits VALUES(1,10,''),(1,20,''),(2,10,''); INSERT INTO cluster_keywords VALUES(1,'secret',0,1,''),(2,'safe',0,1,''); CREATE TRIGGER reject_insert BEFORE INSERT ON visits BEGIN SELECT RAISE(ABORT,'fixture'); END;",
+    );
+    const before = ['urls', 'visits', 'clusters', 'clusters_and_visits', 'cluster_keywords'].map((table) =>
+      db.prepare(`SELECT * FROM "${table}"`).all(),
+    );
+    db.close();
+    await expect(modifyHistory(path, ['secret'], generateHistory('worker', 2, Date.now()))).rejects.toThrow();
+    const restored = new DatabaseSync(path);
+    expect(
+      ['urls', 'visits', 'clusters', 'clusters_and_visits', 'cluster_keywords'].map((table) =>
+        restored.prepare(`SELECT * FROM "${table}"`).all(),
+      ),
+    ).toEqual(before);
+    restored.close();
+    expect((await readdir(root)).some((name) => name.endsWith('.bak'))).toBe(true);
   });
   it('creates and removes only its own successful backup on temporary databases', async () => {
     const root = await directory(),
@@ -181,8 +277,53 @@ describe('Windows action safeguards', () => {
     expect(matchApp('Go', ['Google Chrome', 'Go'])).toBe('Go');
     expect(matchApp('Go', ['Google Chrome'])).toBeNull();
   });
+  it.each([
+    ['微信', '企业微信'],
+    ['微信', '微信企业版'],
+    ['编辑器', '超级编辑器'],
+    ['Editor', '超级Editor'],
+    ['Go', 'Go语言'],
+    ['Cafe', 'Cafe\u0301 Editor'],
+    ['Editor', 'Editor_tools'],
+  ])('does not expand %s into the different Unicode identity %s', (target, name) => {
+    expect(matchApp(target, [name])).toBeNull();
+  });
+  it.each([
+    ['微信', '微信 (64-bit)'],
+    ['Editor', 'EDITOR 2026'],
+    ['C++', 'C++ (x64)'],
+  ])('preserves delimited whole-name matching for %s', (target, name) => {
+    expect(matchApp(target, [name])).toBe(name);
+  });
+  it('does not match an empty uninstall target', () => {
+    expect(matchApp('', ['Fixture app'])).toBeNull();
+  });
   it('rejects ambiguous uninstall matches', () => {
     expect(() => matchApp('Editor', ['Editor A', 'Editor B'])).toThrow();
+    expect(() => matchApp('微信', ['微信 (x86)', '微信 (x64)'])).toThrow('Ambiguous');
+  });
+  it('never passes a different Chinese registry identity to the mocked uninstaller', async () => {
+    const call = vi.spyOn(windows, 'windowsCall').mockImplementation(async (operation) => {
+      if (operation === 'apps') return { names: ['企业微信'] } as never;
+      if (operation === 'uninstall') return { ok: true } as never;
+      throw new Error('Unexpected operation');
+    });
+    const config = defaults();
+    config.targets.apps = ['微信'];
+    const report = await new WindowsActions([]).run(config, 4, true);
+    expect(call).toHaveBeenCalledWith('uninstall', { name: '微信' }, 930000);
+    expect(call).not.toHaveBeenCalledWith('uninstall', { name: '企业微信' }, expect.anything());
+    expect(report[0]!.status).toBe('completed');
+  });
+  it('does not invoke the mocked uninstaller for ambiguous Unicode identities', async () => {
+    const call = vi
+      .spyOn(windows, 'windowsCall')
+      .mockResolvedValue({ names: ['微信 (x86)', '微信 (x64)'] } as never);
+    const config = defaults();
+    config.targets.apps = ['微信'];
+    const report = await new WindowsActions([]).run(config, 4, true);
+    expect(call).toHaveBeenCalledTimes(1);
+    expect(report[0]!.status).toBe('failed');
   });
   it('does not overwrite data shared through hard links', async () => {
     const root = await directory(),

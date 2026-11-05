@@ -35,13 +35,19 @@ writeFileSync(
   JSON.stringify({ extends: '../../../tsconfig.base.json', include: ['**/*.d.ts'] }),
 );
 const modules = resolve(staging, 'node_modules');
-if (existsSync(modules) && lstatSync(modules).isSymbolicLink()) unlinkSync(modules);
+if (lstatSync(modules, { throwIfNoEntry: false })?.isSymbolicLink()) unlinkSync(modules);
 mkdirSync(resolve(modules, '@deepseek-ai'), { recursive: true });
 const requireProtocol = createRequire(resolve(source, 'package.json'));
 for (const dependency of ['@deepseek-ai/cordis', '@deepseek-ai/dsh-brand', 'zod']) {
   const packageFile = requireProtocol.resolve(`${dependency}/package.json`);
   const link = resolve(modules, dependency);
-  if (!existsSync(link)) symlinkSync(resolve(packageFile, '..'), link, 'junction');
+  const target = realpathSync(resolve(packageFile, '..'));
+  const entry = lstatSync(link, { throwIfNoEntry: false });
+  if (entry && (!existsSync(link) || realpathSync(link) !== target)) {
+    if (!entry.isSymbolicLink()) throw new Error(`Refusing to replace a non-link: ${link}`);
+    unlinkSync(link);
+  }
+  if (!existsSync(link)) symlinkSync(target, link, 'junction');
 }
 const generator = new WorkspaceTypertGenerator(root);
 const artifacts = generator.generateContributors(['host']);

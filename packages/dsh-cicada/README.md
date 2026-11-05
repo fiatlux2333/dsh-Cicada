@@ -1,20 +1,24 @@
 # dsh-cicada
 
-面向本机 Windows / DeepSeek Harness **0.2.1-rc.5** 的 Cicada 原生插件，要求 Node.js **24.9+**。仅支持本机 Desktop / 本机 Web，浏览器动作仅支持 Chrome、Edge。
+面向本机 Windows / DeepSeek Harness **0.2.2-rc.1** 的 Cicada 原生插件，要求 Node.js **24.9+**。仅支持本机 Desktop / 本机 Web，浏览器动作仅支持 Chrome、Edge。
 
-> **0.1.0 尚未完成全部真实 Windows 行为验收。** 首次安装为演练、自动触发关闭。真实动作可能不可逆，应先在可恢复快照的虚拟机中验收。
+> **0.1.2 尚未完成全部真实 Windows 行为验收。** 首次安装为演练、自动触发关闭。真实动作可能不可逆，应先在可恢复快照的虚拟机中验收。
 
 ## 安装与升级
 
 退出目标 profile 的宿主，将路径和 profile 名替换为实际值：
 
 ```powershell
-dsh plugin --profile desktop add 'C:\path\dsh-cicada-0.1.0.tgz'
+dsh plugin --profile desktop add 'C:\path\dsh-cicada-0.1.2.tgz'
 ```
 
 启动该 profile，在「插件」中启用 `dsh-cicada` 并打开详情，或使用 `/cicada open`。
 
 升级同版本本地包时，先停用插件并退出宿主，再执行 `dsh plugin --profile desktop remove dsh-cicada` 后重新添加，避免缓存旧包。卸载不自动删除加密领域数据；已有数据升级或重装不保证重置计时或模式。
+
+`0.1.0` 仅对应旧版 `0.2.1-rc.5`。本版升级官方 SDK 和 Cordis 到 `0.2.2-rc.1` / `4.1.0`，不使用版本豁免。已有真实预授权仍可能在启动后补执行；升级前须成功关闭自动触发。源码工作区可运行 `pnpm compat:check` 预检，未知版本应先迁移 SDK 并隔离验收，不直接放宽 `engines.dsh`。
+
+`0.1.2` 修复中文卸载名称误匹配、定向清理的聚类标签与关键词残留，补强官方 Cordis peer 预检及自建隔离宿主验收。卸载目标建议填写完整显示名称；名称歧义会拒绝执行。
 
 ## 功能与命令
 
@@ -54,11 +58,15 @@ dsh plugin --profile desktop add 'C:\path\dsh-cicada-0.1.0.tgz'
 
 关闭每日提醒会清除待提醒状态；同日重新开启不重复已产生过的提醒，次日恢复。管理仅限本机，宿主应绑定回环地址，不共享所有者凭据。本插件不是独立守护进程，宿主关闭期间不执行动作。
 
-本包包含源码、预构建 Host、官方 lazy-CJS Client 和严格 Typert 约定，不依赖 Python 或独立 HTTP 服务。源码仓库本身不包含预构建包，需按开发文档构建。
+本包包含源码、预构建 Host、官方 lazy-CJS Client 和严格 Typert 约定，不依赖 Python 或独立 HTTP 服务。公开源码仓库不包含预构建包，源码 ZIP 不能直接作为插件安装，需按开发文档构建。
 
-- [源码仓库](https://github.com/fiatlux2333/dsh-Cicada)（私有仓库，需要访问权限）
+- [公开源码仓库](https://github.com/fiatlux2333/dsh-Cicada)
+- [更新日志](https://github.com/fiatlux2333/dsh-Cicada/blob/main/CHANGELOG.md)
 - [使用指南](https://github.com/fiatlux2333/dsh-Cicada/blob/main/docs/usage.md)
 - [安全与行为](https://github.com/fiatlux2333/dsh-Cicada/blob/main/docs/safety.md)
 - [开发与验证](https://github.com/fiatlux2333/dsh-Cicada/blob/main/docs/development.md)
+- [宿主升级方案](https://github.com/fiatlux2333/dsh-Cicada/blob/main/docs/compatibility.md)
 - [验证记录](https://github.com/fiatlux2333/dsh-Cicada/blob/main/docs/verification.md)
 - [第三方声明](THIRD_PARTY_NOTICES.md)
+
+反馈问题请提供版本与脱敏复现步骤，不上传目标、关键词、profile、密文、凭据或所有者访问 URL。本项目当前未声明项目许可证，源码公开不等于授予开源许可。

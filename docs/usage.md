@@ -1,21 +1,21 @@
 # 使用指南
 
-适用版本：`dsh-cicada 0.1.0`，Windows / DeepSeek Harness **0.2.1-rc.5**，Node.js **24.9+**。使用前请阅读[安全与行为](safety.md)和[验证记录](verification.md)。
+适用版本：`dsh-cicada 0.1.2`，Windows / DeepSeek Harness **0.2.2-rc.1**，Node.js **24.9+**。使用前请阅读[安全与行为](safety.md)和[验证记录](verification.md)。
 
 ## 安装、升级与卸载
 
-本仓库不提交预构建安装包。先按[开发与验证](development.md)生成 `dist/dsh-cicada-0.1.0.tgz`；若使用单独获得的包，应核对其来源及对应摘要，不假设旧构建的摘要适用于新包。
+本仓库不提交预构建安装包。先按[开发与验证](development.md)生成 `dist/dsh-cicada-0.1.2.tgz`；若使用单独获得的包，应核对其来源及对应摘要，不假设旧构建的摘要适用于新包。
 
 退出目标 profile 的宿主，从项目根目录运行：
 
 ```powershell
-$package = (Resolve-Path '.\dist\dsh-cicada-0.1.0.tgz').Path
+$package = (Resolve-Path '.\dist\dsh-cicada-0.1.2.tgz').Path
 dsh plugin --profile desktop add $package
 ```
 
 将 `desktop` 替换为实际 profile。重新启动该 profile，在「插件」中启用 `dsh-cicada`，打开详情或运行 `/cicada open`。
 
-升级时先停用插件并退出宿主，再移除旧包、添加新包：
+升级前先关闭自动触发并确认保存成功，再停用插件、退出宿主，移除旧包并添加新包：
 
 ```powershell
 dsh plugin --profile desktop remove dsh-cicada
@@ -23,6 +23,8 @@ dsh plugin --profile desktop add $package
 ```
 
 相同版本本地 tarball 也要先移除再添加，避免依赖缓存使旧代码继续运行。只卸载时执行 `remove` 即可；卸载不会自动删除加密领域数据。首次安装建立打卡基线，已有数据升级或重装不等同于首次安装，不应假设计时或模式已重置。
+
+换包前运行 `pnpm compat:check`。已有真实预授权仍可能在换包启动后立即补执行。宿主已经升级导致旧插件无法打开、无法确认停止已保存时，不要直接启用新包或授予版本豁免；先保留停用状态并按[宿主升级方案](compatibility.md)完成隔离验证与安全恢复。监控不能在宿主关闭或插件被拒绝加载期间执行动作，沉默时长仍继续累计。
 
 ## 首次配置
 
@@ -33,6 +35,8 @@ dsh plugin --profile desktop add $package
 5. 在总览执行「立即演练」，到运行日志检查计划和报告。演练不关闭浏览器，不执行破坏性动作。
 
 分区草稿互相独立，切换页面不丢失。保存期间新增的编辑仍为未保存状态；失败或冲突不会被当作保存成功。需要放弃某分区草稿时使用该页「重新加载」，并确认放弃。不要把关闭整个宿主后仍保留草稿当作持久化保证。
+
+卸载目标应填写软件的完整显示名称。非精确匹配仅接受唯一 Unicode 词边界匹配，`微信` 不会扩展成 `企业微信`；多个候选会拒绝执行。注册表没有候选时，仍只向 winget 传精确名称，不进行模糊卸载。
 
 ## 人工命令
 

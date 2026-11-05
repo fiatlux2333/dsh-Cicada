@@ -3,7 +3,9 @@ import { createHash } from 'node:crypto';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
 import { resolve } from 'node:path';
-const file = resolve('dist/dsh-cicada-0.1.0.tgz');
+const sourceManifest = JSON.parse(await readFile(resolve('packages/dsh-cicada/package.json'), 'utf8'));
+const filename = `${sourceManifest.name}-${sourceManifest.version}.tgz`;
+const file = resolve('dist', filename);
 const names = execFileSync('tar', ['-tf', file], { encoding: 'utf8', windowsHide: true })
   .trim()
   .split(/\r?\n/);
@@ -24,7 +26,7 @@ assert(
 const manifest = JSON.parse(
   execFileSync('tar', ['-xOf', file, 'package/package.json'], { encoding: 'utf8', windowsHide: true }),
 );
-assert.equal(manifest.engines.dsh, '=0.2.1-rc.5');
+assert.deepEqual(manifest, sourceManifest, 'Packed manifest does not match current source');
 assert.equal(manifest.dsh.bundle.patch, './cordis.patch.yml');
 for (const entry of [
   'lib/index.js',
@@ -53,7 +55,7 @@ const sha256 = createHash('sha256')
   .update(await readFile(file))
   .digest('hex');
 await mkdir('dist', { recursive: true });
-await writeFile('dist/SHA256SUMS.txt', `${sha256}  dsh-cicada-0.1.0.tgz\n`);
+await writeFile('dist/SHA256SUMS.txt', `${sha256}  ${filename}\n`);
 console.log(
   JSON.stringify({ package: manifest.name, files: names.length, sharedRequests: requests, sha256 }, null, 2),
 );

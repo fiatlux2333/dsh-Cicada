@@ -95,6 +95,43 @@ function linked(db: DatabaseSync, table: string, id: string, fk: string, ids: Se
       .map((r) => Number(r[id])),
   );
 }
+function clearClusterMetadata(db: DatabaseSync, affected: Set<number>, keywords: string[]): void {
+  if (exists(db, 'clusters_and_visits') && columns(db, 'clusters_and_visits').has('cluster_id')) {
+    const remaining = new Set(
+      db
+        .prepare('SELECT DISTINCT cluster_id FROM clusters_and_visits')
+        .all()
+        .map((row) => Number(row.cluster_id)),
+    );
+    const orphans = new Set([...affected].filter((id) => !remaining.has(id)));
+    removeIds(db, 'cluster_keywords', 'cluster_id', orphans);
+    removeIds(db, 'clusters', 'cluster_id', orphans);
+  }
+  if (exists(db, 'clusters')) {
+    const cols = columns(db, 'clusters');
+    if (cols.has('cluster_id'))
+      for (const column of ['label', 'raw_label'].filter((name) => cols.has(name))) {
+        const ids = matchingIds(db, 'clusters', 'cluster_id', [column], keywords);
+        const update = db.prepare(`UPDATE clusters SET "${column}"='' WHERE cluster_id=?`);
+        for (const id of ids) update.run(id);
+      }
+  }
+  if (exists(db, 'cluster_keywords')) {
+    const cols = columns(db, 'cluster_keywords');
+    if (cols.has('cluster_id') && cols.has('keyword')) {
+      const remove = db.prepare('DELETE FROM cluster_keywords WHERE cluster_id=? AND keyword=?');
+      for (const row of db.prepare('SELECT cluster_id,keyword FROM cluster_keywords').all())
+        if (
+          keywords.some((keyword) =>
+            String(row.keyword ?? '')
+              .toLocaleLowerCase()
+              .includes(keyword),
+          )
+        )
+          remove.run(row.cluster_id!, row.keyword!);
+    }
+  }
+}
 export function clearHistory(db: DatabaseSync, keywords: string[]): number {
   const normalized = keywords.map((k) => k.trim().toLocaleLowerCase()).filter(Boolean);
   if (!normalized.length) {
@@ -105,12 +142,18 @@ export function clearHistory(db: DatabaseSync, keywords: string[]): number {
   const urls = matchingIds(db, 'urls', 'id', ['url', 'title'], normalized);
   const visits = linked(db, 'visits', 'id', 'url', urls);
   for (const id of matchingIds(db, 'visits', 'id', ['external_referrer_url'], normalized)) visits.add(id);
-  for (const table of [
-    'content_annotations',
+  const clusterVisits = new Set(visits);
+  for (const id of matchingIds(
+    db,
     'clusters_and_visits',
-    'cluster_visit_duplicates',
-    'visit_source',
-  ])
+    'visit_id',
+    ['url_for_deduping', 'normalized_url', 'url_for_display'],
+    normalized,
+  ))
+    clusterVisits.add(id);
+  // Capture the cluster identities before their sensitive visit links disappear.
+  const clusters = linked(db, 'clusters_and_visits', 'cluster_id', 'visit_id', clusterVisits);
+  for (const table of ['content_annotations', 'cluster_visit_duplicates', 'visit_source'])
     removeIds(db, table, table === 'visit_source' ? 'id' : 'visit_id', visits);
   removeIds(
     db,
@@ -124,18 +167,8 @@ export function clearHistory(db: DatabaseSync, keywords: string[]): number {
       normalized,
     ),
   );
-  removeIds(
-    db,
-    'clusters_and_visits',
-    'visit_id',
-    matchingIds(
-      db,
-      'clusters_and_visits',
-      'visit_id',
-      ['url_for_deduping', 'normalized_url', 'url_for_display'],
-      normalized,
-    ),
-  );
+  removeIds(db, 'clusters_and_visits', 'visit_id', clusterVisits);
+  clearClusterMetadata(db, clusters, normalized);
   const segments = linked(db, 'segments', 'id', 'url_id', urls);
   for (const table of ['segment_usage', 'segment_details']) removeIds(db, table, 'segment_id', segments);
   removeIds(db, 'segments', 'url_id', urls);

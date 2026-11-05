@@ -8,10 +8,12 @@ import { protectedReason, shredFolder } from './folders.ts';
 import { windowsCall } from './windows.ts';
 
 export function matchApp(target: string, names: string[]): string | null {
+  if (!target.trim()) return null;
   const exact = names.filter((n) => n.toLocaleLowerCase() === target.toLocaleLowerCase());
   if (exact.length) return exact[0]!;
   const escaped = target.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const pattern = new RegExp(`(?<![0-9a-z])${escaped}(?![0-9a-z])`, 'i');
+  const word = '[\\p{L}\\p{N}\\p{M}\\p{Pc}]';
+  const pattern = new RegExp(`(?<!${word})${escaped}(?!${word})`, 'iu');
   const matches = [...new Set(names.filter((n) => pattern.test(n)))];
   if (matches.length > 1) throw new Error('Ambiguous app identity');
   return matches[0] ?? null;
