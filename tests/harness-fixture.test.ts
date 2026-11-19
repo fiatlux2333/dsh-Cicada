@@ -62,7 +62,11 @@ describe('owned Harness smoke isolation using process and Windows substitutes', 
     const env = fixtureEnvironment(
       {
         PATH: 'fixture-path',
+        SystemDrive: 'C:',
         SystemRoot: 'C:\\Windows',
+        ProgramFiles: 'C:\\Program Files',
+        ALLUSERSPROFILE: 'C:\\ProgramData',
+        PROCESSOR_ARCHITECTURE: 'AMD64',
         DSH_HOME: 'C:\\daily',
         DSH_AGENTS_HOME: 'C:\\daily-agents',
         DSH_TELEMETRY_MODE: 'ENABLED',
@@ -79,6 +83,10 @@ describe('owned Harness smoke isolation using process and Windows substitutes', 
     expect(env.DSH_TELEMETRY_MODE).toBe('DISABLED');
     expect(env.PATH).toBe('fixture-path');
     expect(env.SystemRoot).toBe('C:\\Windows');
+    expect(env.SystemDrive).toBe('C:');
+    expect(env.ProgramFiles).toBe('C:\\Program Files');
+    expect(env.ALLUSERSPROFILE).toBe('C:\\ProgramData');
+    expect(env.PROCESSOR_ARCHITECTURE).toBe('AMD64');
     for (const key of ['DEEPSEEK_API_KEY', 'OPENAI_API_KEY', 'NODE_OPTIONS', 'NODE_PATH', 'DSH_WEB_URL'])
       expect(env).not.toHaveProperty(key);
   });

@@ -94,11 +94,7 @@ export async function acquireMonitor(): Promise<{
 }> {
   if (process.platform !== 'win32') return { acquired: false, alive: () => false, release: async () => {} };
   const child = start('mutex');
-  let helperError = '';
-  child.stderr.setEncoding('utf8');
-  child.stderr.on('data', (chunk) => {
-    helperError = (helperError + chunk).slice(-4000);
-  });
+  child.stderr.resume();
   child.stdin.on('error', () => {});
   return new Promise((done, fail) => {
     let buffer = '',
@@ -106,7 +102,7 @@ export async function acquireMonitor(): Promise<{
     const timer = setTimeout(() => {
       settled = true;
       child.kill();
-      fail(new Error(`Monitor mutex startup timed out${helperError ? `: ${helperError.trim()}` : ''}`));
+      fail(new Error('Monitor mutex startup timed out'));
     }, 30000);
     child.on('error', (error: NodeJS.ErrnoException) => {
       clearTimeout(timer);

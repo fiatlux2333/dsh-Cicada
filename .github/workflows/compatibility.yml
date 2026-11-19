@@ -61,7 +61,7 @@ jobs:
         run: |
           node scripts/check-windows-safe.ts
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          node --input-type=module -e "import { spawnSync } from 'node:child_process'; import { fixtureEnvironment } from './scripts/harness-fixture.mjs'; const result = spawnSync(process.execPath, ['scripts/check-windows-safe.ts'], { env: fixtureEnvironment(process.env, process.cwd()), stdio: 'inherit' }); process.exit(result.status ?? 1);"
+          node --input-type=module -e "import { spawnSync } from 'node:child_process'; import { fixtureEnvironment } from './scripts/harness-fixture.mjs'; const started = Date.now(); const result = spawnSync(process.execPath, ['scripts/check-windows-safe.ts'], { env: fixtureEnvironment(process.env, process.cwd()), stdio: 'inherit' }); console.log('Isolated Windows checks completed in ' + (Date.now() - started) + ' ms'); process.exit(result.status ?? 1);"
       - name: Smoke-test the same tarball on each declared Windows Web host
         working-directory: ${{ steps.select.outputs.dir }}
         run: |
