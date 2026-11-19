@@ -76,6 +76,8 @@ pnpm check:package
 
 提交到 `main`、PR 或留空版本手动运行时，工作流构建一次当前分发包，在每个声明支持的版本上安装并验收同一份 tarball。运行器把指定版本的官方 npm DSH CLI 装入临时目录，再核对实际进程报告的版本。每次启动都使用独立 profile、回环端口和演练配置，保留已有的监听 PID 及退出检查。
 
+隔离环境保留 PowerShell 和 .NET 使用的 Windows 系统目录、用户身份与处理器变量。CI 在普通环境和隔离环境中分别检查 DPAPI、互斥锁排他、辅助进程丢失保护及旧所有者退出后的恢复，再运行实际宿主验收。监控辅助进程等待就绪的限时为 30 秒。失败时保留退出原因，并上传隔离宿主日志、截图及合成 UI 报告。
+
 工作流更新进入默认分支后，可在 GitHub Actions 的 **Harness compatibility regression → Run workflow** 中填写 `host_version` 试配新版本。定时任务每天查询官方 npm 的 `@deepseek-ai/dsh@next`，用同一流程验证该候选版本。候选流程在临时工作区构建和运行，日常使用的支持范围以分发 manifest 为准。结果见[工作流运行记录](https://github.com/fiatlux2333/dsh-Cicada/actions/workflows/compatibility.yml)。
 
 CI 验收 Windows 上的 Web 宿主。本机 Desktop 安装的 Web 模式仍可通过 `pnpm test:harness --desktop-exe <路径>` 验收。Desktop 原生窗口和真实 Windows 动作属于单独的验收范围。

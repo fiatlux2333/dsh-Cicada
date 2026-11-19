@@ -66,7 +66,7 @@ pnpm check:package
 
 `pnpm compat:check` 检查本机版本、官方 SDK/peer 声明和实际安装依赖，并读取官方 SDK/生成器自身的 Cordis peer 要求及解析版本，不修改 profile；无本机宿主的 CI 使用 `--sdk-only`。当前 SDK 锁定 `0.2.2-rc.1`，Cordis 使用 `~4.1.0`。新宿主适配流程见[宿主升级方案](compatibility.md)。
 
-Windows 工作流包含 SDK 预检、类型与业务回归、合成界面、打包检查和独立 Web 宿主验收。手动触发可指定候选宿主版本，定时触发查询官方 npm 的 `next` 标签。配置进入默认分支后生效，实际结果以对应提交的工作流运行记录为准。[Windows CI](https://github.com/fiatlux2333/dsh-Cicada/actions/workflows/compatibility.yml)
+Windows 工作流包含 SDK 预检、类型与业务回归、合成界面、打包检查、普通及隔离环境的 DPAPI/监控锁检查和独立 Web 宿主验收。手动触发可指定候选宿主版本，定时触发查询官方 npm 的 `next` 标签。配置进入默认分支后生效，实际结果以对应提交的工作流运行记录为准。[Windows CI](https://github.com/fiatlux2333/dsh-Cicada/actions/workflows/compatibility.yml)
 
 ## 测试边界
 
@@ -97,7 +97,7 @@ pnpm test:harness --desktop-exe 'D:\dsh\DeepSeek Harness.exe'
 
 宿主绑定 `127.0.0.1` 的系统分配端口，不打开用户浏览器。测试 URL 只来自自建进程的官方输出；Windows 固定脚本仅查询监听 PID，UI 修改前再次核验，宿主异常退出会关闭测试浏览器上下文。测试使用 Edge 的临时上下文，不登录账号、不调用模型，保持演练和自动触发关闭，只取消真实模式确认。
 
-结束时经私有 IPC 发送官方有界关闭信号，等待退出后才移除该测试 profile 的插件。超时仅终止自建子进程并将本次验收判为失败；退出未确认则拒绝移除运行中插件。不会停止其他宿主，不递归删除隔离数据；截图和日志留在本次目录，不提交或上传。此入口要求本机 Windows 官方 Desktop CLI，CI 的合成 UI 不能替代它。最新结果与历史记录见[验证记录](verification.md)。
+结束时经私有 IPC 发送官方有界关闭信号，等待退出后才移除该测试 profile 的插件。超时仅终止自建子进程并将本次验收判为失败；退出未确认则拒绝移除运行中插件。不会停止其他宿主，不递归删除隔离数据；截图和日志保留在本次目录，CI 失败时上传自建宿主日志与测试截图。此入口支持本机 Windows 官方 Desktop CLI，CI 使用 `--npm-prefix <目录> <精确版本>` 选择临时安装的官方 npm CLI。最新结果与历史记录见[验证记录](verification.md)。
 
 ## 提交约定
 
