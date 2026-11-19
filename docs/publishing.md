@@ -21,11 +21,11 @@
 | 公开仓库与仓库年龄 | 已公开，2026-11-03 北京时间创建，满足创建满一天的要求 |
 | 可安装组合包声明 | `packages/dsh-cicada/package.json` 已有 `dsh.bundle` 和对应 patch |
 | 测试 | Windows Web 宿主、182 项回归、22 项合成界面测试已通过 |
-| 社区收录 | 核对时目录中没有 Cicada 条目，也没有查到以 `fiatlux2333` 为关键词的相关投稿 |
+| 社区收录 | 已提交 [PR #17037](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/17037)，等待 CI 与维护者审阅 |
 | GitHub Topics | 已添加 `dsh-plugin`、`dsh`、`deepseek-harness`、`privacy`、`windows` |
-| 公开安装包 | 发布前完成 Windows 验收，Release 交付同一份 `.tgz` 与 SHA256。npm 待账号登录后发布 |
+| 公开安装包 | [GitHub v0.1.3](https://github.com/fiatlux2333/dsh-Cicada/releases/tag/v0.1.3) 已公开，提供 CI 验收的 `.tgz` 和 SHA256。npm 待邮箱验证码授权 |
 | 发布元数据 | 已补齐 `repository`、`homepage`、`author`、`bugs` 与 `keywords` |
-| 宿主兼容 | `0.1.3` 对齐官方 `0.2.2-rc.5` SDK、生成器和 Zod。`rc.5` 候选的 Windows 宿主验收已通过 |
+| 宿主兼容 | 正式 `0.1.3` 和演练候选均已通过 Windows Web 宿主验收，目标为 `0.2.2-rc.5` |
 | 项目许可 | 项目尚未选择开源许可证，包元数据使用 `UNLICENSED` |
 
 插件位于 monorepo 子目录，应将投稿 URL 指向 `packages/dsh-cicada`。社区的 npm 关联脚本会读取该 URL 对应目录的 `package.json` 包名，并检查 npm 发布包的 `repository` 是否指回这个仓库。根目录包名是 `cicada-workspace`，指向根目录会影响自动关联。[社区贡献指南](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/blob/main/contributing.md) · [npm 关联实现](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/blob/main/scripts/probe-npm.mjs)
@@ -84,4 +84,7 @@
 
 条目采用 `Cicada 蝉蜕`，分类为 `security`，指向 `packages/dsh-cicada` 子目录。双语描述声明支持 DSH `0.2.2-rc.5`，提供固定版本 Release tarball 链接。[收录条目](community/fiatlux2333__dsh-Cicada--packages-dsh-cicada.yml)
 
-发布地址和社区 PR 会在提交完成后记录于此。
+- GitHub 安装包已公开，提供 `.tgz` 与 `SHA256SUMS.txt`。[发布页](https://github.com/fiatlux2333/dsh-Cicada/releases/tag/v0.1.3)
+- 社区收录已提交一个 YAML 条目，投稿 CI 与审阅状态见 PR。合并后由社区更新网站和市场数据。[PR #17037](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/17037)
+- npm 发布预检通过。浏览器账号为 `fiatlux233`，CLI 登录等待邮箱验证码授权，`dsh-cicada` 尚未在 npm 发布。
+- 官方「发现」页所用的社区索引，仍需完成 npm 发布和社区自动关联后验证搜索结果。

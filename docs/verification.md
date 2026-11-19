@@ -6,11 +6,23 @@
 
 仓库公开准备会重新检查源码、锁文件、文档和本地包；下方修复验收及旧包摘要保留为当时证据。GitHub CI 结果以[工作流运行记录](https://github.com/fiatlux2333/dsh-Cicada/actions/workflows/compatibility.yml)为准，源码公开不等于完整 Windows 行为已验收。
 
-## 0.1.3 发布前验收
+## 0.1.3 发布验收
 
 **2026-11-20**，`0.2.2-rc.5` 演练候选在 GitHub `windows-latest` 通过 SDK 预检、类型检查、182 项回归、22 项界面测试、构建与安装包核对、普通和隔离环境中的 DPAPI 与监控锁检查。实际 npm DSH 宿主完成安装、加载、五页、保存、演练、确认取消、停用重载、`/cicada open` 和退出后卸载。[候选通过记录](https://github.com/fiatlux2333/dsh-Cicada/actions/runs/44560034178)
 
-此前一轮在重新启用后的 5 秒界面等待中失败，完整重跑通过。发布前将重载和命令打开页面的等待限时统一为 45 秒，并用正式 `0.1.3` 安装包再跑完整 Windows 验收。正式包的结果和摘要在发布完成后记录。
+此前一轮在重新启用后的 5 秒界面等待中失败，完整重跑通过。发布前将重载和命令打开页面的等待限时统一为 45 秒。
+
+正式提交 `063b8f3` 的 `dsh-cicada 0.1.3` 再次通过完整 Windows 验收，包括 182 项回归、22 项界面测试、DPAPI、监控锁和实际宿主安装与加载。发布包取自该次成功运行保存的构建产物，包中已去除候选标记。[正式包通过记录](https://github.com/fiatlux2333/dsh-Cicada/actions/runs/44562808437)
+
+GitHub Release 包为 **228402 字节**，包含 **31 个条目**。SHA256 如下。[下载 v0.1.3](https://github.com/fiatlux2333/dsh-Cicada/releases/tag/v0.1.3)
+
+```text
+8c6166e0683d97818385e7f1483072985d8d6eaeb5ee0cfa1807dfbad79716ad  dsh-cicada-0.1.3.tgz
+```
+
+通过 GitHub Release API 重新下载资产，SHA256 与 CI 原包一致；匿名查询确认 Release 和两个资产已公开。本机直连 GitHub 下载链接时连接超时，API 下载成功。
+
+npm `publish --dry-run` 已通过，实际 npm 发布仍等待 CLI 账号的邮箱验证码授权。
 
 Desktop 原生窗口、实际删除文件夹、真实浏览数据库修改和软件卸载仍需单独验收。上述自动测试使用隔离 profile 和演练配置。
 
@@ -224,7 +236,7 @@ e2d83ca7f0671410f0d9c28f5173e39b08031c23f283f4167d0526e7301df2c4
 b96819fe06c9e874e306e1c6369bbf5dbff73c6901ea67ee7d4b3e60ab2fb455
 ```
 
-今后再次生成时以本地最新检查结果为准，不能套用历史值。上述两个历史包均为 `0.1.0`，`0.1.1` 摘要见首次适配记录；当前 `0.1.2` 的最新摘要见公开仓库准备复验，审查修复记录中的同版本摘要属于公开文档整理前的产物。更换相同版本本地 tarball 应先 remove 再 add。
+今后再次生成时以本地最新检查结果为准，不能套用历史值。上述两个历史包均为 `0.1.0`，`0.1.1` 摘要见首次适配记录；当时 `0.1.2` 的摘要见公开仓库准备复验，审查修复记录中的同版本摘要属于公开文档整理前的产物。更换相同版本本地 tarball 应先 remove 再 add。
 
 包检查要求 Host、Client、严格约定和 Windows 脚本与当前构建一致，且不含 `node_modules`、EXE、恢复备份、测试数据或凭据。客户端只请求共享 `react` / `react/jsx-runtime`，其余客户端运行时代码自包含。
 
