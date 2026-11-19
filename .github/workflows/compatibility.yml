@@ -74,6 +74,14 @@ jobs:
             pnpm test:harness --npm-prefix "$prefix" "$version"
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           }
+      - name: Save the validated distribution
+        uses: actions/upload-artifact@v4
+        with:
+          name: dsh-cicada-${{ github.sha }}
+          path: |
+            ${{ steps.select.outputs.dir }}/dist/*.tgz
+            ${{ steps.select.outputs.dir }}/dist/SHA256SUMS.txt
+          if-no-files-found: error
       - uses: actions/upload-artifact@v4
         if: failure() && steps.select.outcome == 'success'
         with:

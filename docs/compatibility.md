@@ -6,8 +6,8 @@
 | ------------------------- | ------------ | ------------------------------------------------------- |
 | `0.1.0`                   | `0.2.1-rc.5` | 历史版本，不用于新宿主                                  |
 | `0.1.1`                   | `0.2.2-rc.1` | 首次迁移版本，后续审查修复见 `0.1.2`                    |
-| `0.1.2`                   | `0.2.2-rc.1` | 当前修复版本；具体验收范围见[验证记录](verification.md) |
-| `0.1.3-compat.0.2.2-rc.5` | `0.2.2-rc.5` | 演练候选，已通过本地构建和回归；Windows 宿主验收待完成  |
+| `0.1.2`                   | `0.2.2-rc.1` | 历史修复版本；具体验收范围见[验证记录](verification.md) |
+| `0.1.3`                   | `0.2.2-rc.5` | 当前发布版本，SDK 与 Zod 已对齐；验收见[验证记录](verification.md) |
 | 其他 RC 或正式版本        | 未声明       | 必须先迁移和验收，不自动兼容                            |
 
 从 `0.2.1-rc.5` 升级到 `0.2.2-rc.1` 时，旧包被拒绝加载的直接原因是 `engines.dsh =0.2.1-rc.5` 不匹配新宿主。官方 `0.2.2-rc.1` 同时更新了 Cordis 到 `4.1.0`，并调整了工具、存储和插件管理相关实现。不能只把引擎范围改为 `*`，而继续混用旧生成器、SDK 或 peer 实例。插件版本变化见[更新日志](../CHANGELOG.md)。
@@ -46,7 +46,7 @@ pnpm compat:check
 
 ```powershell
 pnpm compat:check --sdk-only
-pnpm compat:check --host-version 0.2.2-rc.1
+pnpm compat:check --host-version 0.2.2-rc.5
 ```
 
 `--host-version` 只检查提供的版本，不证明现场已安装该版本。所有预检都不证明 API 可用；必须继续类型检查、回归和实际宿主验收。
@@ -78,6 +78,8 @@ pnpm check:package
 
 隔离环境保留 PowerShell 和 .NET 使用的 Windows 系统目录、用户身份与处理器变量。CI 在普通环境和隔离环境中分别检查 DPAPI、互斥锁排他、辅助进程丢失保护及旧所有者退出后的恢复，再运行实际宿主验收。监控辅助进程等待就绪的限时为 30 秒。失败时保留退出原因，并上传隔离宿主日志、截图及合成 UI 报告。
 
-工作流更新进入默认分支后，可在 GitHub Actions 的 **Harness compatibility regression → Run workflow** 中填写 `host_version` 试配新版本。定时任务每天查询官方 npm 的 `@deepseek-ai/dsh@next`，用同一流程验证该候选版本。候选流程在临时工作区构建和运行，日常使用的支持范围以分发 manifest 为准。结果见[工作流运行记录](https://github.com/fiatlux2333/dsh-Cicada/actions/workflows/compatibility.yml)。
+完成验收的 `.tgz` 与 `SHA256SUMS.txt` 会保存到运行记录的构建产物中，发布时取用该安装包。
+
+可在 GitHub Actions 的 **Harness compatibility regression → Run workflow** 中填写 `host_version` 试配新版本。定时任务每天查询官方 npm 的 `@deepseek-ai/dsh@next`，用同一流程验证该候选版本。候选流程在临时工作区构建和运行，日常使用的支持范围以分发 manifest 为准。结果见[工作流运行记录](https://github.com/fiatlux2333/dsh-Cicada/actions/workflows/compatibility.yml)。
 
 CI 验收 Windows 上的 Web 宿主。本机 Desktop 安装的 Web 模式仍可通过 `pnpm test:harness --desktop-exe <路径>` 验收。Desktop 原生窗口和真实 Windows 动作属于单独的验收范围。

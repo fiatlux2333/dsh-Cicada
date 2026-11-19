@@ -1,6 +1,6 @@
-# dsh-cicada
+# Cicada 蝉蜕（dsh-cicada）
 
-面向本机 Windows / DeepSeek Harness **0.2.2-rc.1** 的 Cicada 原生插件，要求 Node.js **24.9+**。仅支持本机 Desktop / 本机 Web，浏览器动作仅支持 Chrome、Edge。
+面向本机 Windows / DeepSeek Harness **0.2.2-rc.5** 的 Cicada 原生插件，要求 Node.js **24.9+**。仅支持本机 Desktop / 本机 Web，浏览器动作仅支持 Chrome、Edge。
 
 **浏览记录清理 · 指定文件夹删除 · 电脑使用记录清理 · 指定软件卸载 · 假历史补位**
 
@@ -10,21 +10,21 @@
 
 假历史补位借鉴 Opera GX 的 Fake My History。Opera GX 由用户主动启用后，连续 14 天未使用浏览器会清除原有历史，并用预设的虚构访问记录替换。Cicada 可按六种人设生成记录，在第一级清理时补入覆盖过去 14 天的假历史，触发时间由打卡阈值决定。[Opera GX 官方说明](https://www.opera.com/gx/features/fake-my-history)
 
-> **0.1.2 尚未完成全部真实 Windows 行为验收。** 首次安装为演练、自动触发关闭。真实动作可能不可逆，应先在可恢复快照的虚拟机中验收。
+> **0.1.3 尚未完成全部真实 Windows 行为验收。** 首次安装为演练、自动触发关闭。真实动作可能不可逆，应先在可恢复快照的虚拟机中验收。
 
 ## 安装与升级
 
-退出目标 profile 的宿主，将路径和 profile 名替换为实际值：
+从发布页下载 `.tgz` 和 `SHA256SUMS.txt` 并核对摘要。退出目标 profile 的宿主，将路径和 profile 名替换为实际值。[下载 v0.1.3](https://github.com/fiatlux2333/dsh-Cicada/releases/tag/v0.1.3)
 
 ```powershell
-dsh plugin --profile desktop add 'C:\path\dsh-cicada-0.1.2.tgz'
+dsh plugin --profile desktop add 'C:\path\dsh-cicada-0.1.3.tgz'
 ```
 
 启动该 profile，在「插件」中启用 `dsh-cicada` 并打开详情，或使用 `/cicada open`。
 
 升级同版本本地包时，先停用插件并退出宿主，再执行 `dsh plugin --profile desktop remove dsh-cicada` 后重新添加，避免缓存旧包。卸载不自动删除加密领域数据；已有数据升级或重装不保证重置计时或模式。
 
-`0.1.0` 仅对应旧版 `0.2.1-rc.5`。本版升级官方 SDK 和 Cordis 到 `0.2.2-rc.1` / `4.1.0`，不使用版本豁免。已有真实预授权仍可能在启动后补执行；升级前须成功关闭自动触发。源码工作区可运行 `pnpm compat:check` 预检，未知版本应先迁移 SDK 并隔离验收，不直接放宽 `engines.dsh`。
+`0.1.0` 对应旧版 `0.2.1-rc.5`，`0.1.1` / `0.1.2` 对应 `0.2.2-rc.1`。本版将官方 SDK 和生成器升级到 `0.2.2-rc.5`，Cordis 为 `4.1.0`，Zod 为 `4.6.6`。已有真实预授权仍可能在启动后补执行，升级前须成功关闭自动触发。源码工作区可运行 `pnpm compat:check` 预检，其他宿主版本应先迁移 SDK 并隔离验收。
 
 `0.1.2` 修复中文卸载名称误匹配、定向清理的聚类标签与关键词残留，补强官方 Cordis peer 预检及自建隔离宿主验收。卸载目标建议填写完整显示名称；名称歧义会拒绝执行。
 

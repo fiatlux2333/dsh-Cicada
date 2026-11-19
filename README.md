@@ -50,30 +50,24 @@ Windows 使用记录清理涵盖最近项目、跳转列表、缩略图和图标
 
 | 你的 DSH 版本 | Cicada 状态                                                                                                 |
 | ------------- | ----------------------------------------------------------------------------------------------------------- |
-| `0.2.2-rc.1`  | 当前插件 `0.1.2` 声明支持。已有 Windows 本机 Web 宿主验收记录，Desktop 原生窗口与真实系统动作仍待单独验收。 |
-| `0.2.2-rc.5`  | 仅有演练候选包。已通过本地类型检查、回归与打包检查，Windows 真实宿主验收待完成。                            |
+| `0.2.2-rc.1`  | 对应历史插件 `0.1.2`，已有 Windows 本机 Web 宿主验收记录。 |
+| `0.2.2-rc.5`  | 对应当前插件 `0.1.3`。Windows 本机 Web 验收范围和运行记录见[验证记录](docs/verification.md)。 |
 | 其他版本      | 旧版配对和新宿主试配流程见[宿主升级方案](docs/compatibility.md)。                                           |
 
 ## 安装并完成第一次演练
 
-以下步骤适用于首次安装 `0.1.2`。准备 Windows、DSH `0.2.2-rc.1`、Node.js **24.9+** 和 pnpm **12.15.0**。已有 Cicada 数据的用户请先关闭自动触发，确认保存成功后再换包。旧授权和打卡计时可能随配置保留。[已有安装的升级步骤](docs/usage.md#安装升级与卸载)
+以下步骤适用于首次安装 `0.1.3`。准备 Windows、DSH `0.2.2-rc.5` 和 Node.js **24.9+**。已有 Cicada 数据的用户请先关闭自动触发，确认保存成功后再换包。旧授权和打卡计时可能随配置保留。[已有安装的升级步骤](docs/usage.md#安装升级与卸载)
 
-**1. 从源码生成安装包。** 本仓库提供源码，安装前需构建 `.tgz`。在 PowerShell 运行以下命令。最后一条会核对包内文件，并把 SHA256 摘要写入 `dist/SHA256SUMS.txt`。
+**1. 下载安装包。** 在发布页下载 `dsh-cicada-0.1.3.tgz` 和 `SHA256SUMS.txt`，用 PowerShell 核对摘要。需要自行构建时，按[开发与验证](docs/development.md)操作。[下载 v0.1.3](https://github.com/fiatlux2333/dsh-Cicada/releases/tag/v0.1.3)
 
 ```powershell
-git clone https://github.com/fiatlux2333/dsh-Cicada.git
-cd dsh-Cicada
-pnpm install --frozen-lockfile
-pnpm compat:check
-pnpm pack:plugin
-pnpm check:package
+Get-FileHash 'C:\path\dsh-cicada-0.1.3.tgz' -Algorithm SHA256
 ```
 
-**2. 安装到你平时打开的 DSH profile。** 先退出该 profile 的宿主，再从仓库根目录执行。示例使用 `desktop`，使用其他 profile 时替换这个名称。
+**2. 安装到你平时打开的 DSH profile。** 先退出该 profile 的宿主，再将路径替换为刚下载的包。示例使用 `desktop`，使用其他 profile 时替换这个名称。
 
 ```powershell
-$package = (Resolve-Path '.\dist\dsh-cicada-0.1.2.tgz').Path
-dsh plugin --profile desktop add $package
+dsh plugin --profile desktop add 'C:\path\dsh-cicada-0.1.3.tgz'
 ```
 
 **3. 查看第一条演练记录。** 重新启动该 profile，在「插件」中启用 `dsh-cicada`。输入 `/cicada open` 打开总览，确认右上角显示「演练模式」和「自动触发关闭」。点击「立即演练」，在「最近执行」查看标为「演练」的记录。这个按钮只生成计划。**「动作配置」中的「全流程真实执行」会在所有者确认后执行真实动作，即使总览显示演练模式。**

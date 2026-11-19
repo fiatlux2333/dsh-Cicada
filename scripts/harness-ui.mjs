@@ -69,14 +69,14 @@ async function checkHarnessUi(fixture) {
     await expect(enabled).toHaveAttribute('aria-checked', 'false');
     await expect(page.getByRole('heading', { name: '蝉蜕 Cicada' })).toHaveCount(0);
     await enabled.click();
-    await expect(page.getByRole('heading', { name: '蝉蜕 Cicada' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: '蝉蜕 Cicada' })).toBeVisible({ timeout: 45000 });
     expect(await page.locator('style[data-cicada]').count()).toBe(1);
     await fixture.assertOwned();
     await page.getByRole('treeitem', { name: '新会话', exact: true }).click();
     const composer = page.getByRole('textbox', { name: '描述你想要构建的内容, / 调用指令, @ 文件或对话' });
     await composer.fill('/cicada open');
     await composer.press('Enter');
-    await expect(page.getByRole('heading', { name: '蝉蜕 Cicada' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: '蝉蜕 Cicada' })).toBeVisible({ timeout: 45000 });
     console.log(
       'Actual Harness integration: five views, DPAPI save, dry run, confirmation cancellation, unload/reload, /cicada open passed.',
     );

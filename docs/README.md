@@ -1,6 +1,6 @@
 # 文档索引
 
-本项目是 Cicada 的独立 TypeScript 原生插件，不与原 Python 程序共享运行文件。当前插件为 **0.1.2**，目标为本机 Windows 与 DeepSeek Harness **0.2.2-rc.1**。仓库公开源码，不包含预构建安装包。
+本项目是 Cicada 的独立 TypeScript 原生插件，不与原 Python 程序共享运行文件。当前插件为 **0.1.3**，目标为本机 Windows 与 DeepSeek Harness **0.2.2-rc.5**。源码在仓库中，预构建安装包和摘要见 [v0.1.3 发布页](https://github.com/fiatlux2333/dsh-Cicada/releases/tag/v0.1.3)。
 
 ## 按任务阅读
 
@@ -26,3 +26,5 @@
 - GitHub CI 的实际状态以工作流运行记录为准；源码公开不代表已授予项目开源许可证。
 
 返回[项目首页](../README.md)。
+
+[社区收录与插件搜索](publishing.md)记录发布、投稿入口与搜索方式。

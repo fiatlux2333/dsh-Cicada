@@ -1,15 +1,15 @@
 # 使用指南
 
-适用版本：`dsh-cicada 0.1.2`，Windows / DeepSeek Harness **0.2.2-rc.1**，Node.js **24.9+**。使用前请阅读[安全与行为](safety.md)和[验证记录](verification.md)。
+适用版本：`dsh-cicada 0.1.3`，Windows / DeepSeek Harness **0.2.2-rc.5**，Node.js **24.9+**。使用前请阅读[安全与行为](safety.md)和[验证记录](verification.md)。
 
 ## 安装、升级与卸载
 
-本仓库不提交预构建安装包。先按[开发与验证](development.md)生成 `dist/dsh-cicada-0.1.2.tgz`；若使用单独获得的包，应核对其来源及对应摘要，不假设旧构建的摘要适用于新包。
+从 [v0.1.3 发布页](https://github.com/fiatlux2333/dsh-Cicada/releases/tag/v0.1.3) 下载预构建安装包和 SHA256 摘要，或按[开发与验证](development.md)自行生成 `dist/dsh-cicada-0.1.3.tgz`。安装前核对来源和摘要。
 
 退出目标 profile 的宿主，从项目根目录运行：
 
 ```powershell
-$package = (Resolve-Path '.\dist\dsh-cicada-0.1.2.tgz').Path
+$package = (Resolve-Path '.\dist\dsh-cicada-0.1.3.tgz').Path
 dsh plugin --profile desktop add $package
 ```
 

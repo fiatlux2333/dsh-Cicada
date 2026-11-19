@@ -3,7 +3,7 @@
 ## 环境准备
 
 - Windows，Node.js **24.9+**，pnpm **12.15.0**。
-- 运行集成验收需要官方 DeepSeek Harness **0.2.2-rc.1**。不使用其他版本的接口代替兼容性验证。
+- 运行集成验收需要官方 DeepSeek Harness **0.2.2-rc.5**。不使用其他版本的接口代替兼容性验证。
 - Playwright 配置使用本机 Microsoft Edge 的临时浏览器上下文，不使用日常浏览器 profile。
 
 从仓库根目录执行：
@@ -46,7 +46,7 @@ pnpm check:package
 | `pnpm compat:prepare <版本>` | 在独立目录同步候选 SDK、Cordis、Zod 和锁文件，执行预检 |
 | `pnpm test:harness`          | 自行创建、核验并关闭官方隔离 Host，验收本机 Web        |
 | `pnpm build`                 | 生成 Host、Client 和协议产物                           |
-| `pnpm pack:plugin`           | 构建并生成 `dist/dsh-cicada-0.1.2.tgz`                 |
+| `pnpm pack:plugin`           | 构建并生成 `dist/dsh-cicada-0.1.3.tgz`                 |
 | `pnpm check:package`         | 核对包清单、共享依赖、产物一致性并生成 SHA256          |
 | `pnpm dev`                   | 在 `http://127.0.0.1:4178/` 启动合成数据预览           |
 
@@ -64,7 +64,7 @@ pnpm check:package
 
 接口依据见[项目首页的官方文档链接](../README.md#官方依据)。社区指南仅作补充。
 
-`pnpm compat:check` 检查本机版本、官方 SDK/peer 声明和实际安装依赖，并读取官方 SDK/生成器自身的 Cordis peer 要求及解析版本，不修改 profile；无本机宿主的 CI 使用 `--sdk-only`。当前 SDK 锁定 `0.2.2-rc.1`，Cordis 使用 `~4.1.0`。新宿主适配流程见[宿主升级方案](compatibility.md)。
+`pnpm compat:check` 检查本机版本、官方 SDK/peer 声明和实际安装依赖，并读取官方 SDK/生成器自身的 Cordis peer 要求及解析版本，不修改 profile；无本机宿主的 CI 使用 `--sdk-only`。当前 SDK 锁定 `0.2.2-rc.5`，Cordis 使用 `~4.1.0`。新宿主适配流程见[宿主升级方案](compatibility.md)。
 
 Windows 工作流包含 SDK 预检、类型与业务回归、合成界面、打包检查、普通及隔离环境的 DPAPI/监控锁检查和独立 Web 宿主验收。手动触发可指定候选宿主版本，定时触发查询官方 npm 的 `next` 标签。配置进入默认分支后生效，实际结果以对应提交的工作流运行记录为准。[Windows CI](https://github.com/fiatlux2333/dsh-Cicada/actions/workflows/compatibility.yml)
 
