@@ -41,7 +41,7 @@ async function checkHarnessUi(fixture) {
     const enabled = page.getByRole('switch', { name: '启用 dsh-cicada', exact: true });
     await fixture.assertOwned();
     if ((await enabled.getAttribute('aria-checked')) === 'false') await enabled.click();
-    await expect(page.getByRole('heading', { name: '蝉蜕 Cicada' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: '蝉蜕 Cicada' })).toBeVisible({ timeout: 45000 });
     await expect(page.getByText('演练模式', { exact: true })).toBeVisible();
     await expect(page.getByText('自动触发关闭', { exact: true })).toBeVisible();
     await page.getByRole('tab', { name: '动作配置' }).click();

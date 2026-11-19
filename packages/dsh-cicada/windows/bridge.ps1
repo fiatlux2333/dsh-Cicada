@@ -17,11 +17,14 @@ function Assert-PlainPath([string]$Path) {
 }
 try {
   if ($Operation -eq 'mutex') {
+    [Console]::Error.WriteLine('monitor-started')
     if ($OwnerPid -le 0) { throw 'invalid-monitor-owner' }
     $owner = Get-Process -Id $OwnerPid -ErrorAction Stop
+    [Console]::Error.WriteLine('monitor-owner-found')
     $ownerStart = $owner.StartTime.ToUniversalTime().Ticks.ToString()
     $sid = [Security.Principal.WindowsIdentity]::GetCurrent().User.Value
     $mutex = [Threading.Mutex]::new($false, "Global\DSH-Cicada-$sid")
+    [Console]::Error.WriteLine('monitor-mutex-opened')
     $owned = $false; $registered = $false; $released = $false
     $leaseKey = 'HKCU:\Software\DeepSeek Harness\Cicada'
     $leaseId = [Guid]::NewGuid().ToString()
@@ -45,6 +48,7 @@ try {
         $registered = $true
       }
       Reply @{ acquired = $owned }
+      [Console]::Error.WriteLine('monitor-replied')
       if ($owned) {
         $releaseLine = [Console]::ReadLine()
         $released = $null -ne $releaseLine
