@@ -56,6 +56,9 @@ jobs:
         working-directory: ${{ steps.select.outputs.dir }}
       - run: pnpm check:package
         working-directory: ${{ steps.select.outputs.dir }}
+      - name: Check Windows DPAPI and monitor ownership
+        working-directory: ${{ steps.select.outputs.dir }}
+        run: node scripts/check-windows-safe.ts
       - name: Smoke-test the same tarball on each declared Windows Web host
         working-directory: ${{ steps.select.outputs.dir }}
         run: |
@@ -71,7 +74,9 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: failure() && steps.select.outcome == 'success'
         with:
-          name: synthetic-ui-failure
+          name: compatibility-failure
           path: |
             ${{ steps.select.outputs.dir }}/test-results/
             ${{ steps.select.outputs.dir }}/artifacts/ui/
+            ${{ steps.select.outputs.dir }}/artifacts/harness-owned-*/host.log
+            ${{ steps.select.outputs.dir }}/artifacts/harness-owned-*/ui/

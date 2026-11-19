@@ -100,12 +100,15 @@ export async function acquireMonitor(): Promise<{
     let buffer = '',
       settled = false;
     const timer = setTimeout(() => {
+      settled = true;
       child.kill();
-      fail(new Error('Monitor mutex unavailable'));
+      fail(new Error('Monitor mutex startup timed out'));
     }, 10000);
-    child.on('error', () => {
+    child.on('error', (error: NodeJS.ErrnoException) => {
       clearTimeout(timer);
-      if (!settled) fail(new Error('Monitor mutex unavailable'));
+      if (settled) return;
+      settled = true;
+      fail(new Error(`Monitor mutex helper could not start (${error.code ?? 'UNKNOWN'})`, { cause: error }));
     });
     child.stdout.setEncoding('utf8');
     child.stdout.on('data', (chunk) => {
@@ -129,13 +132,16 @@ export async function acquireMonitor(): Promise<{
           },
         });
       } catch {
+        settled = true;
         child.kill();
         fail(new Error('Invalid monitor mutex response'));
       }
     });
-    child.on('close', () => {
+    child.on('close', (code, signal) => {
       clearTimeout(timer);
-      if (!settled) fail(new Error('Monitor mutex closed'));
+      if (settled) return;
+      settled = true;
+      fail(new Error(`Monitor mutex helper closed before replying (${signal ?? code ?? 'UNKNOWN'})`));
     });
   });
 }
