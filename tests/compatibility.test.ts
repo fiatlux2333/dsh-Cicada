@@ -2,13 +2,26 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { auditInstalledManifests, auditManifests } from '../scripts/check-compatibility.mjs';
 
-const workspace = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
-const plugin = JSON.parse(
-  readFileSync(new URL('../packages/dsh-cicada/package.json', import.meta.url), 'utf8'),
-);
-const target = workspace.devDependencies['@deepseek-ai/dsh-typert-generator'];
+import { candidateManifests } from '../scripts/prepare-compatibility.mjs';
+
 const core = '@deepseek-ai/cordis';
 const generator = '@deepseek-ai/dsh-typert-generator';
+const target = '0.2.2-rc.1';
+const workspace = { devDependencies: { [generator]: target } };
+const shared: Record<string, string> = {
+  [core]: '~4.1.0',
+  '@deepseek-ai/dsh-api-gateway': target,
+  '@deepseek-ai/dsh-commands': target,
+  '@deepseek-ai/dsh-tools': target,
+};
+const plugin = {
+  name: 'fixture',
+  version: '1.0.0',
+  engines: { dsh: `=${target}` },
+  dependencies: { zod: '4.4.3' },
+  peerDependencies: { ...shared },
+  devDependencies: { ...shared },
+};
 
 function installedFixture(coreVersion = '4.1.0') {
   const cordis = { name: core, version: coreVersion };
@@ -44,7 +57,11 @@ function installedFixture(coreVersion = '4.1.0') {
 
 describe('Harness compatibility preflight', () => {
   it('keeps generator, peer SDKs, development SDKs and the engine on one target', () => {
-    expect(auditManifests(workspace, plugin, target).sdkVersion).toBe(target);
+    const read = (path: string) => JSON.parse(readFileSync(new URL(path, import.meta.url), 'utf8'));
+    const actualWorkspace = read('../package.json');
+    const actualPlugin = read('../packages/dsh-cicada/package.json');
+    const actualTarget = actualWorkspace.devDependencies[generator];
+    expect(auditManifests(actualWorkspace, actualPlugin, actualTarget).sdkVersion).toBe(actualTarget);
   });
   it.each(['0.2.1-rc.5', '0.2.2-rc.2', '0.2.2', '0.3.0', 'invalid'])(
     'rejects untested Host %s rather than silently widening the RC range',
@@ -116,5 +133,62 @@ describe('Harness compatibility preflight', () => {
     const fixture = installedFixture();
     fixture.manifests.plugin!['@deepseek-ai/dsh-api-gateway'].version = '0.2.1-rc.5';
     expect(() => auditInstalledManifests(workspace, plugin, fixture.load)).toThrow('Installed');
+  });
+});
+
+describe('explicit support for multiple Host releases', () => {
+  const second = '0.2.2-rc.3';
+  const range = `=${target} || =${second}`;
+  function multiHost() {
+    const copy = structuredClone(plugin);
+    copy.engines.dsh = range;
+    for (const name of Object.keys(copy.peerDependencies))
+      if (name !== core) copy.peerDependencies[name] = range;
+    return copy;
+  }
+  it('accepts the two listed hosts using one pinned build SDK and rejects the intervening RC', () => {
+    const candidate = multiHost();
+    expect(auditManifests(workspace, candidate, second).hosts).toEqual([target, second]);
+    expect(() => auditManifests(workspace, candidate, '0.2.2-rc.2')).toThrow('not supported');
+  });
+  it('rejects a host without its shared peer and a list missing the build SDK', () => {
+    const candidate = multiHost();
+    candidate.peerDependencies['@deepseek-ai/dsh-tools'] = target;
+    expect(() => auditManifests(workspace, candidate)).toThrow('expected');
+    candidate.engines.dsh = second;
+    expect(() => auditManifests(workspace, candidate)).toThrow('build SDK');
+  });
+});
+
+describe('candidate workspace', () => {
+  const next = '0.2.2-rc.2';
+  const storage = { name: '@deepseek-ai/dsh-storage-domain', version: next, dependencies: { zod: '4.6.6' } };
+  const metadata = { name: generator, version: next, peerDependencies: { [core]: '~4.2.0' } };
+  it('updates all DSH pins and the official Core peer in copies, keeping other dependencies intact', () => {
+    const source = {
+      ...plugin,
+      devDependencies: { ...shared, react: '^18', '@deepseek-ai/dsh-extra': target },
+    };
+    const candidate = candidateManifests(workspace, source, next, metadata, storage);
+    expect(candidate.workspace.devDependencies[generator]).toBe(next);
+    expect(candidate.plugin.version).toBe('1.0.1-compat.' + next);
+    expect(candidate.plugin.cicadaCompatibilityProbe).toBe(true);
+    expect(candidate.plugin.dependencies.zod).toBe('4.6.6');
+    expect(candidate.plugin.devDependencies).toMatchObject({
+      [core]: '~4.2.0',
+      react: '^18',
+      '@deepseek-ai/dsh-extra': next,
+    });
+    expect(candidate.plugin.peerDependencies[core]).toBe('~4.2.0');
+    expect(auditManifests(candidate.workspace, candidate.plugin, next).hosts).toEqual([next]);
+    expect(workspace.devDependencies[generator]).toBe(target);
+    expect(source.engines.dsh).toBe('=' + target);
+  });
+  it('rejects floating targets and metadata from another release', () => {
+    expect(() => candidateManifests(workspace, plugin, 'next', metadata, storage)).toThrow('exact DSH');
+    expect(() => candidateManifests(workspace, plugin, target, metadata, storage)).toThrow('metadata');
+    expect(() =>
+      candidateManifests(workspace, plugin, next, { ...metadata, peerDependencies: {} }, storage),
+    ).toThrow('Cordis');
   });
 });

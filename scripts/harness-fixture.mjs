@@ -1,6 +1,6 @@
 import { execFile, spawn } from 'node:child_process';
 import { createWriteStream } from 'node:fs';
-import { access, lstat, mkdir, mkdtemp, realpath } from 'node:fs/promises';
+import { access, lstat, mkdir, mkdtemp, readFile, realpath } from 'node:fs/promises';
 import { finished } from 'node:stream/promises';
 import { randomUUID } from 'node:crypto';
 import { basename, dirname, join, relative, resolve } from 'node:path';
@@ -131,7 +131,6 @@ export async function withOwnedHarness(runtime, visit) {
 }
 
 async function desktopCli(explicitExecutable) {
-  if (process.platform !== 'win32') throw new Error('Live Harness smoke tests require local Windows');
   let executable = explicitExecutable && resolve(explicitExecutable);
   if (!executable) {
     const { stdout } = await exec('where.exe', ['dsh'], { windowsHide: true, timeout: 10000 });
@@ -286,9 +285,18 @@ function ownedHost(cli, fixture, args) {
   };
 }
 
-export async function localHarnessRuntime(plugin, validateVersion, executable) {
+async function npmCli(prefix) {
+  const manifestPath = join(resolve(prefix), 'node_modules', '@deepseek-ai', 'dsh', 'package.json');
+  const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
+  if (manifest.name !== '@deepseek-ai/dsh' || typeof manifest.bin?.dsh !== 'string')
+    throw new Error('Expected the official npm Harness CLI');
+  return { executable: process.execPath, entry: resolve(dirname(manifestPath), manifest.bin.dsh) };
+}
+
+export async function localHarnessRuntime(plugin, validateVersion, executable, npmPrefix) {
+  if (process.platform !== 'win32') throw new Error('Live Harness smoke tests require local Windows');
   assertNoExternalTarget(process.env);
-  const cli = await desktopCli(executable);
+  const cli = npmPrefix ? await npmCli(npmPrefix) : await desktopCli(executable);
   const powershell = join(
     process.env.SystemRoot ?? 'C:\\Windows',
     'System32',

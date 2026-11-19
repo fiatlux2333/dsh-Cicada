@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
+import { join } from 'node:path';
 import {
   announcedUrl,
   assertOwnedListener,
@@ -57,6 +58,7 @@ describe('owned Harness smoke isolation using process and Windows substitutes', 
     expect(visit).not.toHaveBeenCalled();
   });
   it('overrides inherited homes and excludes provider credentials and Node preload settings', () => {
+    const directory = join('fixture', 'fresh');
     const env = fixtureEnvironment(
       {
         PATH: 'fixture-path',
@@ -70,10 +72,10 @@ describe('owned Harness smoke isolation using process and Windows substitutes', 
         NODE_OPTIONS: '--import daily.mjs',
         NODE_PATH: 'C:\\daily-node',
       },
-      'C:\\workspace\\artifacts\\fresh',
+      directory,
     );
-    expect(env.DSH_HOME).toBe('C:\\workspace\\artifacts\\fresh\\home');
-    expect(env.DSH_AGENTS_HOME).toBe('C:\\workspace\\artifacts\\fresh\\agents');
+    expect(env.DSH_HOME).toBe(join(directory, 'home'));
+    expect(env.DSH_AGENTS_HOME).toBe(join(directory, 'agents'));
     expect(env.DSH_TELEMETRY_MODE).toBe('DISABLED');
     expect(env.PATH).toBe('fixture-path');
     expect(env.SystemRoot).toBe('C:\\Windows');

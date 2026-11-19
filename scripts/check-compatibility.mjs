@@ -6,29 +6,36 @@ import semver from 'semver';
 
 const root = new URL('../', import.meta.url);
 const readJson = (url) => JSON.parse(readFileSync(url, 'utf8'));
-const isDsh = (name) => name === '@deepseek-ai/dsh' || name.startsWith('@deepseek-ai/dsh-');
-const CORE = '@deepseek-ai/cordis';
-const GENERATOR = '@deepseek-ai/dsh-typert-generator';
+export const isDsh = (name) => name === '@deepseek-ai/dsh' || name.startsWith('@deepseek-ai/dsh-');
+export const CORE = '@deepseek-ai/cordis';
+export const GENERATOR = '@deepseek-ai/dsh-typert-generator';
+
+function exactVersions(range, label) {
+  const versions =
+    typeof range === 'string' ? range.split('||').map((part) => part.trim().replace(/^=/, '')) : [];
+  if (!versions.length || versions.some((v) => !v || semver.valid(v) !== v))
+    throw new Error(`${label} must list exact versions`);
+  return [...new Set(versions)].sort(semver.compare);
+}
 
 export function auditManifests(workspace, plugin, hostVersion) {
-  const sdkVersion = workspace.devDependencies['@deepseek-ai/dsh-typert-generator'];
+  const sdkVersion = workspace.devDependencies[GENERATOR];
   if (!semver.valid(sdkVersion)) throw new Error('The official generator must use an exact SDK version');
-  // RC releases are certified individually, not by an open-ended prerelease range.
-  if (plugin.engines.dsh !== `=${sdkVersion}`)
-    throw new Error('engines.dsh must match the SDK target; certify a new release before changing it');
-  for (const [section, dependencies] of Object.entries({
-    peerDependencies: plugin.peerDependencies,
-    devDependencies: plugin.devDependencies,
-  })) {
-    for (const [name, version] of Object.entries(dependencies)) {
-      if (isDsh(name) && version !== sdkVersion)
-        throw new Error(`${section}.${name} is ${version}, expected ${sdkVersion}`);
-    }
+  const hosts = exactVersions(plugin.engines.dsh, 'engines.dsh');
+  if (!hosts.includes(sdkVersion)) throw new Error('engines.dsh must include the build SDK target');
+  for (const [name, version] of Object.entries(plugin.devDependencies)) {
+    if (isDsh(name) && version !== sdkVersion)
+      throw new Error(`devDependencies.${name} is ${version}, expected ${sdkVersion}`);
   }
-  for (const name of Object.keys(plugin.peerDependencies)) {
-    if (isDsh(name) || name === '@deepseek-ai/cordis')
-      if (plugin.devDependencies[name] !== plugin.peerDependencies[name])
-        throw new Error(`${name} must have matching peer and development declarations`);
+  for (const [name, range] of Object.entries(plugin.peerDependencies)) {
+    if (isDsh(name)) {
+      if (!Object.hasOwn(plugin.devDependencies, name))
+        throw new Error(`${name} needs a matching devDependency`);
+      if (exactVersions(range, name).join() !== hosts.join())
+        throw new Error(`peerDependencies.${name}: expected the exact versions in engines.dsh`);
+    } else if (name === CORE && plugin.devDependencies[name] !== range) {
+      throw new Error(`${name} must have matching peer and development declarations`);
+    }
   }
   if (
     hostVersion !== undefined &&
@@ -39,7 +46,7 @@ export function auditManifests(workspace, plugin, hostVersion) {
       `Harness ${hostVersion} is not supported by ${plugin.name}@${plugin.version} (${plugin.engines.dsh}). ` +
         'Do not grant a version exemption. Build and test an updated plugin in an isolated profile first.',
     );
-  return { plugin: `${plugin.name}@${plugin.version}`, sdkVersion, hostRange: plugin.engines.dsh };
+  return { plugin: `${plugin.name}@${plugin.version}`, sdkVersion, hostRange: plugin.engines.dsh, hosts };
 }
 
 export function auditInstalledManifests(workspace, plugin, loadInstalled) {

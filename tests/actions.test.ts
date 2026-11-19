@@ -19,6 +19,7 @@ import * as windows from '../packages/dsh-cicada/src/host/windows.ts';
 const temporary: string[] = [];
 afterEach(async () => {
   vi.restoreAllMocks();
+  vi.unstubAllEnvs();
   for (const path of temporary.splice(0)) await rm(path, { recursive: true, force: true });
 });
 async function directory(): Promise<string> {
@@ -264,6 +265,7 @@ describe('Windows action safeguards', () => {
     expect(protectedReason(path)).not.toBeNull();
   });
   it('protects extended system paths and Harness ancestors', () => {
+    vi.stubEnv('SystemRoot', 'C:\\Windows');
     expect(protectedReason('\\\\?\\C:\\Windows\\System32')).not.toBeNull();
     expect(protectedReason('D:\\Apps', ['D:\\Apps\\Harness'])).not.toBeNull();
   });
@@ -343,6 +345,12 @@ describe('Windows action safeguards', () => {
     await symlink(target, join(own, 'junction'), 'junction');
     await shredFolder(own, []);
     expect(await readFile(join(target, 'keep'), 'utf8')).toBe('safe');
+  });
+  it('blocks live actions in a compatibility probe before resolving any targets', async () => {
+    vi.stubEnv('CICADA_COMPAT_PROBE', '1');
+    const runner = new WindowsActions([]);
+    await expect(runner.run(defaults(), 1, true)).rejects.toThrow('仅支持演练');
+    await expect(runner.run(defaults(), 1, false)).resolves.toBeDefined();
   });
   it('dry-run never touches a configured nonexistent or protected target', async () => {
     const config = defaults();

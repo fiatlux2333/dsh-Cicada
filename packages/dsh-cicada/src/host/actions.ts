@@ -24,6 +24,7 @@ export class WindowsActions implements ActionRunner {
     private readonly now: () => number = Date.now,
   ) {}
   async run(config: Configuration, level: Level, live: boolean): Promise<StepResult[]> {
+    if (live && process.env.CICADA_COMPAT_PROBE === '1') throw new Error('兼容性候选包仅支持演练');
     const out: StepResult[] = [];
     const step = async (
       action: string,

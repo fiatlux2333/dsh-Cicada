@@ -1,7 +1,8 @@
 import { build } from 'esbuild';
-import { mkdir, writeFile, copyFile } from 'node:fs/promises';
+import { mkdir, writeFile, copyFile, readFile } from 'node:fs/promises';
 const root = new URL('../', import.meta.url);
 const pkg = new URL('packages/dsh-cicada/', root);
+const manifest = JSON.parse(await readFile(new URL('package.json', pkg), 'utf8'));
 const shared = ['@deepseek-ai/cordis', 'react', 'react/jsx-runtime', 'react-dom'];
 await mkdir(new URL('lib/', pkg), { recursive: true });
 await copyFile(new URL('THIRD_PARTY_NOTICES.md', root), new URL('THIRD_PARTY_NOTICES.md', pkg));
@@ -10,6 +11,9 @@ await build({
   outfile: new URL('lib/index.js', pkg).pathname.replace(/^\/([A-Za-z]:)/, '$1'),
   bundle: true,
   platform: 'node',
+  define: {
+    'process.env.CICADA_COMPAT_PROBE': JSON.stringify(manifest.cicadaCompatibilityProbe === true ? '1' : '0'),
+  },
   format: 'esm',
   target: 'node24',
   packages: 'external',

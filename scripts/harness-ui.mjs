@@ -15,7 +15,7 @@ async function checkHarnessUi(fixture) {
     void context?.close().catch(() => {});
   };
   try {
-    context = await browser.newContext({ viewport: { width: 1350, height: 1000 } });
+    context = await browser.newContext({ locale: 'zh-CN', viewport: { width: 1350, height: 1000 } });
     fixture.signal.addEventListener('abort', closeOnHostExit, { once: true });
     if (fixture.signal.aborted) throw new Error('Owned Host exited before browser startup');
     page = await context.newPage();
@@ -97,8 +97,9 @@ async function checkHarnessUi(fixture) {
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   assertNoExternalTarget(process.env);
   const args = process.argv.slice(2);
-  if (args.length && (args.length !== 2 || args[0] !== '--desktop-exe'))
-    throw new Error('Usage: pnpm test:harness [--desktop-exe <installed Harness executable>]');
+  const npmMode = args[0] === '--npm-prefix' && args.length === 3;
+  if (args.length && !npmMode && (args.length !== 2 || args[0] !== '--desktop-exe'))
+    throw new Error('Usage: pnpm test:harness [--desktop-exe <exe> | --npm-prefix <dir> <expected-version>]');
   checkCompatibility(['--sdk-only']);
   execFileSync(process.execPath, [fileURLToPath(new URL('./check-package.mjs', import.meta.url))], {
     cwd: fileURLToPath(new URL('../', import.meta.url)),
@@ -110,8 +111,12 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   );
   const runtime = await localHarnessRuntime(
     plugin,
-    (version) => checkCompatibility(['--host-version', version]),
-    args[1],
+    (version) => {
+      if (npmMode && version !== args[2]) throw new Error(`Expected Harness ${args[2]}, got ${version}`);
+      return checkCompatibility(['--host-version', version]);
+    },
+    npmMode ? undefined : args[1],
+    npmMode ? args[1] : undefined,
   );
   const result = await withOwnedHarness(runtime, checkHarnessUi);
   console.log(`Owned test Host stopped and its plugin removed. Isolated evidence: ${result.directory}`);

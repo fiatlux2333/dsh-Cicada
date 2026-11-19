@@ -5,6 +5,13 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+    inputs:
+      host_version:
+        description: Exact DSH version to probe (blank to test the declared hosts)
+        type: string
+        required: false
+  schedule:
+    - cron: '17 22 * * *'
 
 permissions:
   contents: read
@@ -12,7 +19,7 @@ permissions:
 jobs:
   windows:
     runs-on: windows-latest
-    timeout-minutes: 20
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -21,15 +28,50 @@ jobs:
           node-version: '24'
           cache: pnpm
       - run: pnpm install --frozen-lockfile --registry=https://registry.npmjs.org
-      - run: pnpm compat:check --sdk-only
-      - run: pnpm check
+      - name: Select workspace
+        id: select
+        env:
+          CANDIDATE: ${{ inputs.host_version }}
+        run: |
+          $dir = $env:GITHUB_WORKSPACE
+          $target = $env:CANDIDATE
+          if ($env:GITHUB_EVENT_NAME -eq 'schedule') {
+            $target = npm view '@deepseek-ai/dsh@next' version --registry=https://registry.npmjs.org
+            if ($LASTEXITCODE -ne 0 -or !$target) { throw 'Could not resolve the official next tag' }
+          }
+          if ($target) {
+            $dir = node scripts/prepare-compatibility.mjs "$target"
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+          "dir=$dir" >> $env:GITHUB_OUTPUT
+      - name: Check SDK, types, tests and build
+        working-directory: ${{ steps.select.outputs.dir }}
+        run: |
+          pnpm compat:check --sdk-only
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          pnpm check
       - run: pnpm test:ui
+        working-directory: ${{ steps.select.outputs.dir }}
       - run: pnpm pack:plugin
+        working-directory: ${{ steps.select.outputs.dir }}
       - run: pnpm check:package
+        working-directory: ${{ steps.select.outputs.dir }}
+      - name: Smoke-test the same tarball on each declared Windows Web host
+        working-directory: ${{ steps.select.outputs.dir }}
+        run: |
+          $report = node scripts/check-compatibility.mjs --sdk-only | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0 -or !$report.hosts) { throw 'Missing validated host list' }
+          foreach ($version in $report.hosts) {
+            $prefix = Join-Path $env:RUNNER_TEMP "dsh-$version"
+            npm install --prefix "$prefix" --registry=https://registry.npmjs.org --no-audit --no-fund "@deepseek-ai/dsh@$version"
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            pnpm test:harness --npm-prefix "$prefix" "$version"
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
       - uses: actions/upload-artifact@v4
-        if: failure()
+        if: failure() && steps.select.outcome == 'success'
         with:
           name: synthetic-ui-failure
           path: |
-            test-results/
-            artifacts/ui/
+            ${{ steps.select.outputs.dir }}/test-results/
+            ${{ steps.select.outputs.dir }}/artifacts/ui/
