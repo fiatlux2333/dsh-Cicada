@@ -21,7 +21,7 @@
 | 公开仓库与仓库年龄 | 已公开，2026-11-03 北京时间创建，满足创建满一天的要求 |
 | 可安装组合包声明 | `packages/dsh-cicada/package.json` 已有 `dsh.bundle` 和对应 patch |
 | 测试 | Windows Web 宿主、182 项回归、22 项合成界面测试已通过 |
-| 社区收录 | 已提交 [PR #17037](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/17037)，等待 CI 与维护者审阅 |
+| 社区收录 | [PR #17037](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/17037) 已合并，社区网站已有条目。中文介绍更新见 [PR #17318](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/17318) |
 | GitHub Topics | 已添加 `dsh-plugin`、`dsh`、`deepseek-harness`、`privacy`、`windows` |
 | 公开安装包 | [GitHub v0.1.3](https://github.com/fiatlux2333/dsh-Cicada/releases/tag/v0.1.3) 已公开，提供 CI 验收的 `.tgz` 和 SHA256。npm 待邮箱验证码授权 |
 | 发布元数据 | 已补齐 `repository`、`homepage`、`author`、`bugs` 与 `keywords` |
@@ -74,7 +74,7 @@
 
 ## 搜索文字与展示
 
-投稿草稿的名称采用 `Cicada 蝉蜕`，分类采用 `security`。双语描述包含手动打卡、浏览记录清理、假历史、文件夹删除、Windows 使用记录清理和软件卸载，方便用户按功能搜索。描述按当前功能编写，明确以未打卡时长计时。键鼠空闲检测和一天统一执行仍是待开发功能。
+社区条目名称由维护者规范为 `fiatlux2333/dsh-Cicada#dsh-cicada`，分类采用 `security`。描述包含手动打卡、浏览记录清理、假历史、文件夹删除、Windows 使用记录清理和软件卸载，方便用户按功能搜索。描述按当前功能编写，明确以未打卡时长计时。键鼠空闲检测和一天统一执行仍是待开发功能。
 
 `dsh-market` 的搜索实现读取名称、npm 包名、作者、双语描述和分类。因此社区条目中的功能描述需要写全。官方参考生成器还会从 npm 包的 `keywords` 提取搜索关键词，但该社区的索引生成器目前没有复制这一字段。[社区市场搜索实现](https://github.com/dsh-market/dsh-market/blob/main/src/client/market-data.ts) · [官方参考生成器](https://github.com/deepseek-ai/deepseek-harness/blob/master/apps/plugin-market-generator/README.zh.md)
 
@@ -82,9 +82,9 @@
 
 ## 本次投稿
 
-条目采用 `Cicada 蝉蜕`，分类为 `security`，指向 `packages/dsh-cicada` 子目录。双语描述声明支持 DSH `0.2.2-rc.5`，提供固定版本 Release tarball 链接。[收录条目](community/fiatlux2333__dsh-Cicada--packages-dsh-cicada.yml)
+条目采用 `fiatlux2333/dsh-Cicada#dsh-cicada`，分类为 `security`，指向 `packages/dsh-cicada` 子目录，提供固定版本 Release tarball 链接。本地条目已同步新的中文介绍，社区更新等待 PR 合并。[收录条目](community/fiatlux2333__dsh-Cicada--packages-dsh-cicada.yml) · [介绍修改 PR #17318](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/17318)
 
 - GitHub 安装包已公开，提供 `.tgz` 与 `SHA256SUMS.txt`。[发布页](https://github.com/fiatlux2333/dsh-Cicada/releases/tag/v0.1.3)
-- 社区收录已提交一个 YAML 条目，投稿 CI 与审阅状态见 PR。合并后由社区更新网站和市场数据。[PR #17037](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/17037)
+- 社区收录 PR 已合并，社区网站和搜索目录已有条目。[PR #17037](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/17037)
 - npm 发布预检通过。浏览器账号为 `fiatlux233`，CLI 登录等待邮箱验证码授权，`dsh-cicada` 尚未在 npm 发布。
 - 官方「发现」页所用的社区索引，仍需完成 npm 发布和社区自动关联后验证搜索结果。
